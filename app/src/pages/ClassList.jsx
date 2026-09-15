@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import AnnouncementBanner from './AnnouncementBanner'
 
 export default function ClassList({ teacher, onLoggedOut }) {
   const [classes, setClasses] = useState(null)
@@ -35,10 +36,17 @@ export default function ClassList({ teacher, onLoggedOut }) {
     <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>{teacher.name}님의 반 목록</h2>
-        <button onClick={handleLogout} style={{ padding: '6px 10px' }}>
-          로그아웃
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="change-password">
+            <button style={{ padding: '6px 10px' }}>비밀번호 변경</button>
+          </Link>
+          <button onClick={handleLogout} style={{ padding: '6px 10px' }}>
+            로그아웃
+          </button>
+        </div>
       </div>
+
+      <AnnouncementBanner />
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {!classes && !error && <p>불러오는 중...</p>}

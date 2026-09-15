@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import AnnouncementBanner from './AnnouncementBanner'
 
 export default function ParentView() {
   const [searchParams] = useSearchParams()
@@ -50,6 +51,7 @@ export default function ParentView() {
 
       {profile && (
         <>
+          <AnnouncementBanner />
           <h2>{profile.name} 학생 코칭 현황</h2>
           <p style={{ color: '#888' }}>
             {profile.class_name} / {profile.difficulty_tier ?? '레벨 미지정'}

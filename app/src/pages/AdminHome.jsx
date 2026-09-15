@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 
 const ROLE_LABEL = { coach: '코칭쌤', homeroom_teacher: '담임강사', admin: '시스템관리자' }
 
-export default function AdminHome({ admin, onLoggedOut }) {
+export default function AdminHome({ admin, onLoggedOut, onChangePassword }) {
   const [teachers, setTeachers] = useState(null)
   const [error, setError] = useState('')
   const [resettingId, setResettingId] = useState(null)
@@ -55,9 +55,14 @@ export default function AdminHome({ admin, onLoggedOut }) {
     <div style={{ maxWidth: 760, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>관리자 — {admin.name}님</h2>
-        <button onClick={handleLogout} style={{ padding: '6px 10px' }}>
-          로그아웃
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onChangePassword} style={{ padding: '6px 10px' }}>
+            비밀번호 변경
+          </button>
+          <button onClick={handleLogout} style={{ padding: '6px 10px' }}>
+            로그아웃
+          </button>
+        </div>
       </div>
 
       <h3>직원 계정 목록</h3>

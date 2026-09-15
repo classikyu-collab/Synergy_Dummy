@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase, translateAuthError } from '../lib/supabaseClient'
 
-export default function ChangePassword({ onChanged }) {
+export default function ChangePassword({ onChanged, onCancel, forced = true }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -19,8 +19,8 @@ export default function ChangePassword({ onChanged }) {
       setError('비밀번호가 일치하지 않습니다.')
       return
     }
-    if (password === '1234') {
-      setError('초기 비밀번호(1234)는 그대로 사용할 수 없습니다.')
+    if (password === '1234' || password === '123456') {
+      setError('초기/임시 비밀번호는 그대로 사용할 수 없습니다.')
       return
     }
 
@@ -45,7 +45,7 @@ export default function ChangePassword({ onChanged }) {
   return (
     <div style={{ maxWidth: 320, margin: '80px auto', fontFamily: 'sans-serif' }}>
       <h2>비밀번호 변경</h2>
-      <p>최초 로그인입니다. 새 비밀번호로 변경해주세요.</p>
+      <p>{forced ? '최초 로그인입니다. 새 비밀번호로 변경해주세요.' : '새 비밀번호를 입력해주세요.'}</p>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 12 }}>
           <label>새 비밀번호</label>
@@ -71,6 +71,16 @@ export default function ChangePassword({ onChanged }) {
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
           {loading ? '변경 중...' : '변경하기'}
         </button>
+        {!forced && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            style={{ width: '100%', padding: 10, marginTop: 8 }}
+          >
+            취소
+          </button>
+        )}
       </form>
     </div>
   )

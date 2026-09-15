@@ -5,6 +5,7 @@ import AdminHome from './pages/AdminHome'
 
 export default function AdminApp() {
   const [admin, setAdmin] = useState(null)
+  const [changingPassword, setChangingPassword] = useState(false)
 
   if (!admin) {
     return <AdminLogin onLoggedIn={setAdmin} />
@@ -14,5 +15,21 @@ export default function AdminApp() {
     return <ChangePassword onChanged={() => setAdmin({ ...admin, must_change_password: false })} />
   }
 
-  return <AdminHome admin={admin} onLoggedOut={() => setAdmin(null)} />
+  if (changingPassword) {
+    return (
+      <ChangePassword
+        forced={false}
+        onChanged={() => setChangingPassword(false)}
+        onCancel={() => setChangingPassword(false)}
+      />
+    )
+  }
+
+  return (
+    <AdminHome
+      admin={admin}
+      onLoggedOut={() => setAdmin(null)}
+      onChangePassword={() => setChangingPassword(true)}
+    />
+  )
 }
