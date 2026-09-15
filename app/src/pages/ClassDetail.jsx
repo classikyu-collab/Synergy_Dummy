@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import ItemChecklist from './ItemChecklist'
 
-export default function ClassDetail() {
+export default function ClassDetail({ teacher }) {
   const { classId } = useParams()
   const [classInfo, setClassInfo] = useState(null)
   const [students, setStudents] = useState(null)
   const [items, setItems] = useState(null)
   const [error, setError] = useState('')
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -70,12 +72,19 @@ export default function ClassDetail() {
           </ul>
 
           <h3>최근 코칭 항목 (최대 20건)</h3>
+          <p style={{ color: '#888', fontSize: 13 }}>항목을 클릭하면 학생별 완료 체크를 할 수 있습니다.</p>
           {items && items.length === 0 && <p>등록된 항목이 없습니다.</p>}
-          <ul>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
             {items?.map((it) => (
-              <li key={it.id}>
-                [{it.date}] {it.item_type} — {it.name}
-                {it.page ? ` (p.${it.page})` : ''}
+              <li key={it.id} style={{ borderBottom: '1px solid #ddd', padding: '6px 0' }}>
+                <div
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setExpandedId(expandedId === it.id ? null : it.id)}
+                >
+                  {expandedId === it.id ? '▼' : '▶'} [{it.date}] {it.item_type} — {it.name}
+                  {it.page ? ` (p.${it.page})` : ''}
+                </div>
+                {expandedId === it.id && <ItemChecklist itemId={it.id} teacherId={teacher.id} />}
               </li>
             ))}
           </ul>

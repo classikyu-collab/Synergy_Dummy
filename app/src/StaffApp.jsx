@@ -23,7 +23,7 @@ export default function StaffApp() {
   return (
     <Routes>
       <Route path="/" element={<ClassList teacher={teacher} onLoggedOut={() => setTeacher(null)} />} />
-      <Route path="classes/:classId" element={<ClassDetail />} />
+      <Route path="classes/:classId" element={<ClassDetail teacher={teacher} />} />
     </Routes>
   )
 }
