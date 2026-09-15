@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import AnnouncementBanner from './AnnouncementBanner'
 
 export default function StudentHome() {
   const { studentId } = useParams()
@@ -45,7 +44,6 @@ export default function StudentHome() {
 
       {profile && (
         <>
-          <AnnouncementBanner />
           <h2>{profile.name}님</h2>
           <p style={{ color: '#888' }}>
             {profile.class_name} / {profile.difficulty_tier ?? '레벨 미지정'}
