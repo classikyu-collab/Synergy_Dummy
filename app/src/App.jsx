@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import StaffApp from './StaffApp'
 import AdminApp from './AdminApp'
+import ParentView from './pages/ParentView'
 import StudentClassSelect from './pages/StudentClassSelect'
 import StudentNameSelect from './pages/StudentNameSelect'
 import StudentHome from './pages/StudentHome'
@@ -22,7 +23,7 @@ export default function App() {
         <Route path="/student" element={<StudentClassSelect />} />
         <Route path="/student/:classId" element={<StudentNameSelect />} />
         <Route path="/student/:classId/:studentId" element={<StudentHome />} />
-        <Route path="/parent" element={<ComingSoon label="학부모" />} />
+        <Route path="/parent" element={<ParentView />} />
         <Route path="/admin" element={<AdminApp />} />
         <Route path="*" element={<Navigate to="/staff" replace />} />
       </Routes>
