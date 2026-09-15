@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import ItemChecklist from './ItemChecklist'
+import ItemRow from './ItemRow'
 import NewItemForm from './NewItemForm'
 
 export default function ClassDetail({ teacher }) {
@@ -86,16 +86,17 @@ export default function ClassDetail({ teacher }) {
           {items && items.length === 0 && <p>등록된 항목이 없습니다.</p>}
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {items?.map((it) => (
-              <li key={it.id} style={{ borderBottom: '1px solid #ddd', padding: '6px 0' }}>
-                <div
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setExpandedId(expandedId === it.id ? null : it.id)}
-                >
-                  {expandedId === it.id ? '▼' : '▶'} [{it.date}] {it.item_type} — {it.name}
-                  {it.page ? ` (p.${it.page})` : ''}
-                </div>
-                {expandedId === it.id && <ItemChecklist itemId={it.id} teacherId={teacher.id} />}
-              </li>
+              <ItemRow
+                key={it.id}
+                item={it}
+                teacherId={teacher.id}
+                expanded={expandedId === it.id}
+                onToggleExpand={() => setExpandedId(expandedId === it.id ? null : it.id)}
+                onUpdated={(updated) =>
+                  setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+                }
+                onDeleted={(deletedId) => setItems((prev) => prev.filter((p) => p.id !== deletedId))}
+              />
             ))}
           </ul>
         </>
