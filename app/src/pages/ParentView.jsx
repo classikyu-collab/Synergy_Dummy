@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-
-const THEME = {
-  primary: '#0d9488',
-  primaryDark: '#0a6f66',
-  bg: '#f2f8f7',
-  ink: '#1f2a29',
-  inkMuted: '#7c8f8c',
-}
+import { PARENT_THEME as THEME } from '../lib/theme'
 
 export default function ParentView() {
   const [query, setQuery] = useState('')

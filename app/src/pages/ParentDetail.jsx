@@ -2,16 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { STATUS_COLORS, classifyStatus, todayStr } from '../lib/statusColors'
-
-const THEME = {
-  primary: '#0d9488',
-  primaryDark: '#0a6f66',
-  bg: '#f2f8f7',
-  ink: '#1f2a29',
-  inkMuted: '#7c8f8c',
-  examBorder: '#f0975b',
-  makeup: { bg: '#dbeafe', border: '#93c5fd', text: '#1d4ed8' },
-}
+import { PARENT_THEME as THEME } from '../lib/theme'
 
 function StatusBadge({ label, isDone }) {
   const kind = classifyStatus(label, isDone)
