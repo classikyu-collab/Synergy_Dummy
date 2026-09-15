@@ -6,6 +6,8 @@ const ROLE_LABEL = { coach: '코칭쌤', homeroom_teacher: '담임강사', admin
 export default function AdminHome({ admin, onLoggedOut }) {
   const [teachers, setTeachers] = useState(null)
   const [error, setError] = useState('')
+  const [resettingId, setResettingId] = useState(null)
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -32,8 +34,25 @@ export default function AdminHome({ admin, onLoggedOut }) {
     onLoggedOut()
   }
 
+  async function handleReset(teacher) {
+    if (!confirm(`${teacher.name}(${teacher.legacy_id}) 계정 비밀번호를 123456으로 초기화할까요?`)) return
+    setResettingId(teacher.id)
+    setMessage('')
+    setError('')
+    const { data, error: fnErr } = await supabase.functions.invoke('admin-reset-password', {
+      body: { teacherId: teacher.id },
+    })
+    setResettingId(null)
+    if (fnErr || data?.error) {
+      setError('초기화 실패: ' + (data?.error ?? fnErr.message))
+      return
+    }
+    setMessage(`${teacher.name}(${teacher.legacy_id}) 비밀번호가 123456으로 초기화되었습니다.`)
+    setTeachers((prev) => prev.map((t) => (t.id === teacher.id ? { ...t, must_change_password: true } : t)))
+  }
+
   return (
-    <div style={{ maxWidth: 720, margin: '40px auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 760, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>관리자 — {admin.name}님</h2>
         <button onClick={handleLogout} style={{ padding: '6px 10px' }}>
@@ -43,6 +62,7 @@ export default function AdminHome({ admin, onLoggedOut }) {
 
       <h3>직원 계정 목록</h3>
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      {message && <p style={{ color: 'green' }}>{message}</p>}
       {!teachers && !error && <p>불러오는 중...</p>}
 
       {teachers && (
@@ -55,6 +75,7 @@ export default function AdminHome({ admin, onLoggedOut }) {
               <th style={{ padding: 6 }}>상태</th>
               <th style={{ padding: 6 }}>마스터</th>
               <th style={{ padding: 6 }}>비밀번호 변경 필요</th>
+              <th style={{ padding: 6 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -66,14 +87,20 @@ export default function AdminHome({ admin, onLoggedOut }) {
                 <td style={{ padding: 6 }}>{t.status}</td>
                 <td style={{ padding: 6 }}>{t.is_master ? 'Y' : ''}</td>
                 <td style={{ padding: 6 }}>{t.must_change_password ? '예' : ''}</td>
+                <td style={{ padding: 6 }}>
+                  <button
+                    onClick={() => handleReset(t)}
+                    disabled={resettingId === t.id}
+                    style={{ fontSize: 12 }}
+                  >
+                    {resettingId === t.id ? '처리 중...' : '비밀번호 초기화'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>
-        비밀번호 초기화 등 계정 조작 기능은 다음 단계에서 추가될 예정입니다.
-      </p>
     </div>
   )
 }
