@@ -14,7 +14,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/staff" element={<StaffApp />} />
+        <Route path="/staff/*" element={<StaffApp />} />
         <Route path="/student" element={<ComingSoon label="학생 로그인" />} />
         <Route path="/parent" element={<ComingSoon label="학부모" />} />
         <Route path="/admin" element={<ComingSoon label="관리자" />} />

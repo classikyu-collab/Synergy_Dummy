@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import StaffLogin from './pages/StaffLogin'
 import ChangePassword from './pages/ChangePassword'
-import StaffHome from './pages/StaffHome'
+import ClassList from './pages/ClassList'
+import ClassDetail from './pages/ClassDetail'
 
 export default function StaffApp() {
   const [teacher, setTeacher] = useState(null)
@@ -18,5 +20,10 @@ export default function StaffApp() {
     )
   }
 
-  return <StaffHome teacher={teacher} onLoggedOut={() => setTeacher(null)} />
+  return (
+    <Routes>
+      <Route path="/" element={<ClassList teacher={teacher} onLoggedOut={() => setTeacher(null)} />} />
+      <Route path="classes/:classId" element={<ClassDetail />} />
+    </Routes>
+  )
 }
