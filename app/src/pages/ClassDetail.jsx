@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import ItemChecklist from './ItemChecklist'
+import NewItemForm from './NewItemForm'
 
 export default function ClassDetail({ teacher }) {
   const { classId } = useParams()
@@ -73,6 +74,15 @@ export default function ClassDetail({ teacher }) {
 
           <h3>최근 코칭 항목 (최대 20건)</h3>
           <p style={{ color: '#888', fontSize: 13 }}>항목을 클릭하면 학생별 완료 체크를 할 수 있습니다.</p>
+
+          {students && (
+            <NewItemForm
+              classId={classId}
+              students={students}
+              onCreated={(newItem) => setItems((prev) => [newItem, ...(prev ?? [])])}
+            />
+          )}
+
           {items && items.length === 0 && <p>등록된 항목이 없습니다.</p>}
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {items?.map((it) => (
