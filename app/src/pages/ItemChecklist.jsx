@@ -1,30 +1,42 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
-export default function ItemChecklist({ itemId, teacherId }) {
+const UNSET = '__unset__'
+
+export default function ItemChecklist({ itemId, itemType, teacherId }) {
   const [rows, setRows] = useState(null)
+  const [options, setOptions] = useState(null)
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const [{ data: targets, error: targetErr }, { data: records, error: recordErr }] = await Promise.all([
-        supabase
-          .from('coaching_item_targets')
-          .select('student_id, students(id, name)')
-          .eq('item_id', itemId),
-        supabase
-          .from('coaching_records')
-          .select('id, student_id, is_done, status_label')
-          .eq('item_id', itemId)
-          .eq('round', 1),
-      ])
+      const [{ data: targets, error: targetErr }, { data: records, error: recordErr }, { data: opts, error: optErr }] =
+        await Promise.all([
+          supabase
+            .from('coaching_item_targets')
+            .select('student_id, students(id, name)')
+            .eq('item_id', itemId),
+          supabase
+            .from('coaching_records')
+            .select('id, student_id, is_done, status_label')
+            .eq('item_id', itemId)
+            .eq('round', 1),
+          supabase
+            .from('status_options')
+            .select('label, is_done')
+            .eq('item_type', itemType)
+            .eq('round', 1)
+            .eq('is_active', true)
+            .order('label'),
+        ])
       if (cancelled) return
-      if (targetErr || recordErr) {
-        setError('불러오지 못했습니다: ' + (targetErr || recordErr).message)
+      if (targetErr || recordErr || optErr) {
+        setError('불러오지 못했습니다: ' + (targetErr || recordErr || optErr).message)
         return
       }
+      setOptions(opts)
       const recordByStudent = Object.fromEntries(records.map((r) => [r.student_id, r]))
       setRows(
         targets
@@ -40,10 +52,11 @@ export default function ItemChecklist({ itemId, teacherId }) {
     return () => {
       cancelled = true
     }
-  }, [itemId])
+  }, [itemId, itemType])
 
-  async function toggle(row) {
-    const nextDone = !(row.record?.is_done ?? false)
+  async function handleChange(row, label) {
+    if (label === UNSET) return
+    const option = options.find((o) => o.label === label)
     setSavingId(row.studentId)
     const { data, error: upsertErr } = await supabase
       .from('coaching_records')
@@ -52,8 +65,8 @@ export default function ItemChecklist({ itemId, teacherId }) {
           student_id: row.studentId,
           item_id: itemId,
           round: 1,
-          status_label: nextDone ? '완료' : '미완료',
-          is_done: nextDone,
+          status_label: option.label,
+          is_done: option.is_done,
           recorded_by_teacher_id: teacherId,
           recorded_at: new Date().toISOString(),
         },
@@ -70,27 +83,28 @@ export default function ItemChecklist({ itemId, teacherId }) {
   }
 
   if (error) return <p style={{ color: 'red' }}>{error}</p>
-  if (!rows) return <p>불러오는 중...</p>
+  if (!rows || !options) return <p>불러오는 중...</p>
   if (rows.length === 0) return <p>대상 학생이 없습니다.</p>
 
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0 16px' }}>
-      {rows.map((row) => {
-        const done = row.record?.is_done ?? false
-        return (
-          <li key={row.studentId} style={{ padding: '4px 0' }}>
-            <label style={{ cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={done}
-                disabled={savingId === row.studentId}
-                onChange={() => toggle(row)}
-              />{' '}
-              {row.name} {done ? '— 완료' : '— 미완료'}
-            </label>
-          </li>
-        )
-      })}
+      {rows.map((row) => (
+        <li key={row.studentId} style={{ padding: '4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ minWidth: 80 }}>{row.name}</span>
+          <select
+            value={row.record?.status_label ?? UNSET}
+            disabled={savingId === row.studentId}
+            onChange={(e) => handleChange(row, e.target.value)}
+          >
+            {!row.record && <option value={UNSET}>미체크</option>}
+            {options.map((o) => (
+              <option key={o.label} value={o.label}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </li>
+      ))}
     </ul>
   )
 }

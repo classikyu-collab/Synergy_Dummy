@@ -85,7 +85,7 @@ export default function ItemRow({ item, teacherId, expanded, onToggleExpand, onU
         </button>
       </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {expanded && <ItemChecklist itemId={item.id} teacherId={teacherId} />}
+      {expanded && <ItemChecklist itemId={item.id} itemType={item.item_type} teacherId={teacherId} />}
     </li>
   )
 }
