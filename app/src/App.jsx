@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import StaffApp from './StaffApp'
+import StudentClassSelect from './pages/StudentClassSelect'
+import StudentNameSelect from './pages/StudentNameSelect'
+import StudentHome from './pages/StudentHome'
 
 function ComingSoon({ label }) {
   return (
@@ -15,7 +18,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/staff/*" element={<StaffApp />} />
-        <Route path="/student" element={<ComingSoon label="학생 로그인" />} />
+        <Route path="/student" element={<StudentClassSelect />} />
+        <Route path="/student/:classId" element={<StudentNameSelect />} />
+        <Route path="/student/:classId/:studentId" element={<StudentHome />} />
         <Route path="/parent" element={<ComingSoon label="학부모" />} />
         <Route path="/admin" element={<ComingSoon label="관리자" />} />
         <Route path="*" element={<Navigate to="/staff" replace />} />
