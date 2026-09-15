@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import AdminStudents from './AdminStudents'
 
 const ROLE_LABEL = { coach: '코칭쌤', homeroom_teacher: '담임강사', admin: '시스템관리자' }
 
 export default function AdminHome({ admin, onLoggedOut, onChangePassword }) {
+  const [tab, setTab] = useState('teachers')
   const [teachers, setTeachers] = useState(null)
   const [error, setError] = useState('')
   const [resettingId, setResettingId] = useState(null)
@@ -65,6 +67,25 @@ export default function AdminHome({ admin, onLoggedOut, onChangePassword }) {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
+        <button
+          onClick={() => setTab('teachers')}
+          style={{ fontWeight: tab === 'teachers' ? 700 : 400, padding: '6px 10px' }}
+        >
+          직원 계정
+        </button>
+        <button
+          onClick={() => setTab('students')}
+          style={{ fontWeight: tab === 'students' ? 700 : 400, padding: '6px 10px' }}
+        >
+          학생 통합 현황
+        </button>
+      </div>
+
+      {tab === 'students' && <AdminStudents />}
+
+      {tab === 'teachers' && (
+        <>
       <h3>직원 계정 목록</h3>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {message && <p style={{ color: 'green' }}>{message}</p>}
@@ -105,6 +126,8 @@ export default function AdminHome({ admin, onLoggedOut, onChangePassword }) {
             ))}
           </tbody>
         </table>
+      )}
+        </>
       )}
     </div>
   )
