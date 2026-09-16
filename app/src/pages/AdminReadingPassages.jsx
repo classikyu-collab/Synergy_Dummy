@@ -40,6 +40,20 @@ export default function AdminReadingPassages() {
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [cleaningUp, setCleaningUp] = useState(false)
+
+  async function runCleanup() {
+    if (!confirm('진행중/폐기 상태는 3일, 제출완료는 90일이 지난 녹음을 삭제합니다. 계속할까요?')) return
+    setCleaningUp(true)
+    const { error: rpcErr } = await supabase.rpc('admin_run_reading_retention_cleanup')
+    setCleaningUp(false)
+    if (rpcErr) {
+      showToast('정리 실패: ' + rpcErr.message, 'error')
+      return
+    }
+    showToast('보관기간 지난 녹음을 정리했습니다.')
+    reload()
+  }
 
   async function reload() {
     const { data, error: fetchErr } = await supabase
@@ -81,7 +95,14 @@ export default function AdminReadingPassages() {
       <PageHeader
         title="빠른 해석 지문"
         subtitle="학생이 소리 내어 읽고 해석을 녹음할 지문을 관리합니다."
-        action={<PrimaryButton onClick={() => setCreating(true)}>+ 지문 등록</PrimaryButton>}
+        action={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <GhostButton onClick={runCleanup} disabled={cleaningUp}>
+              {cleaningUp ? '정리 중...' : '보관기간 지난 녹음 정리'}
+            </GhostButton>
+            <PrimaryButton onClick={() => setCreating(true)}>+ 지문 등록</PrimaryButton>
+          </div>
+        }
       />
 
       <PageError>{error}</PageError>
