@@ -7,6 +7,20 @@ export const STUDENT_THEME = {
   examBorder: '#f0975b',
 }
 
+export const ADMIN_THEME = {
+  primary: '#5b5bf0',
+  primaryDark: '#4341c9',
+  primaryTint: '#eef0fe',
+  bg: '#f7f7fb',
+  surface: '#ffffff',
+  border: '#eceef7',
+  ink: '#1f2333',
+  inkMuted: '#5c5f70',
+  inkFaint: '#9296ab',
+  success: { bg: '#d9f2e3', text: '#186238' },
+  danger: { bg: '#fbdcdc', text: '#a02323' },
+}
+
 export const PARENT_THEME = {
   primary: '#0d9488',
   primaryDark: '#0a6f66',

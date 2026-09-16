@@ -26,3 +26,24 @@ export function translateAuthError(message) {
   }
   return message
 }
+
+// supabase.functions.invoke()는 Edge Function이 비 2xx를 반환하면 응답 바디를 data에 담지 않고
+// 항상 같은 문구("Edge Function returned a non-2xx status code")의 FunctionsHttpError만 던진다.
+// 우리 Edge Function들은 실패 시 { error: "친절한 메시지" } JSON을 돌려주므로, error.context(원본 Response)에서
+// 그 바디를 직접 꺼내 써야 실제 이유가 화면에 뜬다.
+export async function invokeFn(name, body) {
+  const { data, error } = await supabase.functions.invoke(name, { body })
+  if (!error) {
+    if (data?.error) return { data: null, message: data.error }
+    return { data, message: null }
+  }
+  try {
+    if (error.context && typeof error.context.json === 'function') {
+      const parsed = await error.context.json()
+      if (parsed?.error) return { data: null, message: parsed.error }
+    }
+  } catch {
+    // fall through to generic message below
+  }
+  return { data: null, message: error.message }
+}

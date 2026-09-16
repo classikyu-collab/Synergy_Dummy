@@ -72,7 +72,13 @@ export default function ClassDetail({ teacher }) {
             ))}
           </ul>
 
-          <h3>최근 코칭 항목 (최대 20건)</h3>
+          <p>
+        <Link to={`/staff/classes/${classId}/school-exam-review`}>내신 시험지 답안 검토 →</Link>
+        {' · '}
+        <Link to={`/staff/classes/${classId}/reading-review`}>빠른 해석 녹음 채점 →</Link>
+      </p>
+
+      <h3>최근 코칭 항목 (최대 20건)</h3>
           <p style={{ color: '#888', fontSize: 13 }}>항목을 클릭하면 학생별 완료 체크를 할 수 있습니다.</p>
 
           {students && (

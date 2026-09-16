@@ -4,6 +4,8 @@ import StaffLogin from './pages/StaffLogin'
 import ChangePassword from './pages/ChangePassword'
 import ClassList from './pages/ClassList'
 import ClassDetail from './pages/ClassDetail'
+import SchoolExamReview from './pages/SchoolExamReview'
+import ReadingReview from './pages/ReadingReview'
 
 function VoluntaryChangePassword() {
   const navigate = useNavigate()
@@ -31,6 +33,8 @@ export default function StaffApp() {
     <Routes>
       <Route path="/" element={<ClassList teacher={teacher} onLoggedOut={() => setTeacher(null)} />} />
       <Route path="classes/:classId" element={<ClassDetail teacher={teacher} />} />
+      <Route path="classes/:classId/school-exam-review" element={<SchoolExamReview />} />
+      <Route path="classes/:classId/reading-review" element={<ReadingReview teacher={teacher} />} />
       <Route path="change-password" element={<VoluntaryChangePassword />} />
     </Routes>
   )

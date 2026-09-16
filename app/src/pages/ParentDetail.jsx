@@ -24,20 +24,149 @@ function StatusBadge({ label, isDone }) {
   )
 }
 
+function pinStorageKey(studentId) {
+  return `synapse_parent_pin_${studentId}`
+}
+
+function PinGate({ studentId, onVerified }) {
+  const [stage, setStage] = useState('checking') // checking | enter | change | error
+  const [pin, setPin] = useState('')
+  const [oldPin, setOldPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [newPin2, setNewPin2] = useState('')
+  const [msg, setMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function checkStored() {
+      const stored = localStorage.getItem(pinStorageKey(studentId))
+      if (!stored) {
+        if (!cancelled) setStage('enter')
+        return
+      }
+      const { data, error: err } = await supabase.rpc('verify_parent_pin', { p_student_id: studentId, p_pin: stored })
+      if (cancelled) return
+      const row = data?.[0]
+      if (err || !row?.ok) {
+        localStorage.removeItem(pinStorageKey(studentId))
+        setStage('enter')
+        return
+      }
+      if (row.must_change) {
+        setOldPin(stored)
+        setStage('change')
+        return
+      }
+      onVerified(stored)
+    }
+    checkStored()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId])
+
+  async function handleEnterSubmit(e) {
+    e.preventDefault()
+    setMsg('')
+    setSubmitting(true)
+    const { data, error: err } = await supabase.rpc('verify_parent_pin', { p_student_id: studentId, p_pin: pin })
+    setSubmitting(false)
+    const row = data?.[0]
+    if (err || !row?.ok) {
+      setMsg('PIN이 올바르지 않습니다.')
+      return
+    }
+    if (row.must_change) {
+      setOldPin(pin)
+      setStage('change')
+      return
+    }
+    localStorage.setItem(pinStorageKey(studentId), pin)
+    onVerified(pin)
+  }
+
+  async function handleChangeSubmit(e) {
+    e.preventDefault()
+    setMsg('')
+    if (!/^[0-9]{4}$/.test(newPin)) {
+      setMsg('새 PIN은 숫자 4자리로 입력해주세요.')
+      return
+    }
+    if (newPin !== newPin2) {
+      setMsg('새 PIN이 서로 일치하지 않습니다.')
+      return
+    }
+    setSubmitting(true)
+    const { data: ok, error: err } = await supabase.rpc('set_parent_pin', { p_student_id: studentId, p_old_pin: oldPin, p_new_pin: newPin })
+    setSubmitting(false)
+    if (err || !ok) {
+      setMsg('PIN 변경에 실패했습니다.')
+      return
+    }
+    localStorage.setItem(pinStorageKey(studentId), newPin)
+    onVerified(newPin)
+  }
+
+  if (stage === 'checking') {
+    return <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>불러오는 중...</div>
+  }
+
+  const boxStyle = { maxWidth: 340, margin: '60px auto', fontFamily: "'Noto Sans KR', -apple-system, sans-serif", padding: '0 20px' }
+  const inputStyle = { width: '100%', padding: '12px 14px', fontSize: 16, letterSpacing: 4, textAlign: 'center', border: '1px solid #dcece9', borderRadius: 12, boxSizing: 'border-box', marginBottom: 10, colorScheme: 'light' }
+
+  if (stage === 'change') {
+    return (
+      <div style={boxStyle}>
+        <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>PIN 변경이 필요합니다</p>
+        <p style={{ fontSize: 13, color: '#7c8f8c', marginBottom: 16 }}>처음 이용하시는군요. 앞으로 사용하실 4자리 PIN을 설정해주세요.</p>
+        <form onSubmit={handleChangeSubmit}>
+          <input type="text" inputMode="numeric" maxLength={4} placeholder="새 PIN 4자리" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} style={inputStyle} required />
+          <input type="text" inputMode="numeric" maxLength={4} placeholder="새 PIN 확인" value={newPin2} onChange={(e) => setNewPin2(e.target.value.replace(/\D/g, ''))} style={inputStyle} required />
+          {msg && <p style={{ color: 'red', fontSize: 12.5 }}>{msg}</p>}
+          <button type="submit" disabled={submitting} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+            {submitting ? '설정 중...' : 'PIN 설정하기'}
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  return (
+    <div style={boxStyle}>
+      <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>PIN 입력</p>
+      <p style={{ fontSize: 13, color: '#7c8f8c', marginBottom: 16 }}>자녀 정보 보호를 위해 4자리 PIN이 필요합니다. 처음이시라면 초기 PIN(0000)을 입력해주세요.</p>
+      <form onSubmit={handleEnterSubmit}>
+        <input type="text" inputMode="numeric" maxLength={4} placeholder="PIN 4자리" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} style={inputStyle} autoFocus required />
+        {msg && <p style={{ color: 'red', fontSize: 12.5 }}>{msg}</p>}
+        <button type="submit" disabled={submitting} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+          {submitting ? '확인 중...' : '확인'}
+        </button>
+      </form>
+      <Link to="/parent" style={{ display: 'block', textAlign: 'center', marginTop: 14, fontSize: 12.5, color: '#7c8f8c' }}>
+        ← 다시 검색하기
+      </Link>
+    </div>
+  )
+}
+
 export default function ParentDetail() {
   const { studentId } = useParams()
+  const [verifiedPin, setVerifiedPin] = useState(null)
   const [profile, setProfile] = useState(null)
   const [items, setItems] = useState(null)
   const [nextMakeup, setNextMakeup] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!verifiedPin) return
     let cancelled = false
     async function load() {
       const [{ data: profileRows, error: profileErr }, { data: itemRows, error: itemErr }, { data: makeupDate }] = await Promise.all([
-        supabase.rpc('get_student_profile', { p_student_id: studentId }),
-        supabase.rpc('get_student_coaching_items', { p_student_id: studentId }),
-        supabase.rpc('get_student_next_makeup', { p_student_id: studentId }),
+        supabase.rpc('get_parent_profile', { p_student_id: studentId, p_pin: verifiedPin }),
+        supabase.rpc('get_parent_coaching_items', { p_student_id: studentId, p_pin: verifiedPin }),
+        supabase.rpc('get_parent_next_makeup', { p_student_id: studentId, p_pin: verifiedPin }),
       ])
       if (cancelled) return
       if (profileErr || itemErr || !profileRows?.length) {
@@ -52,7 +181,11 @@ export default function ParentDetail() {
     return () => {
       cancelled = true
     }
-  }, [studentId])
+  }, [studentId, verifiedPin])
+
+  if (!verifiedPin) {
+    return <PinGate studentId={studentId} onVerified={setVerifiedPin} />
+  }
 
   if (error) {
     return (
