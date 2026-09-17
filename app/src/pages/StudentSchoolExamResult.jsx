@@ -19,6 +19,11 @@ function StudentSchoolExamResultContent({ pin }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [savingQ, setSavingQ] = useState(null)
+  const [reportingQ, setReportingQ] = useState(null)
+  const [reportReason, setReportReason] = useState('정답이 틀린 것 같아요')
+  const [reportDetail, setReportDetail] = useState('')
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportedQs, setReportedQs] = useState(() => new Set())
   const { open, openMenu, closeMenu } = useStudentMenu()
 
   async function load() {
@@ -50,6 +55,32 @@ function StudentSchoolExamResultContent({ pin }) {
       return
     }
     await load()
+  }
+
+  function openReport(qno) {
+    setReportingQ(reportingQ === qno ? null : qno)
+    setReportReason('정답이 틀린 것 같아요')
+    setReportDetail('')
+  }
+
+  async function submitReport(qno) {
+    setReportSubmitting(true)
+    const { error: rpcErr } = await supabase.rpc('submit_school_exam_issue_report', {
+      p_student_id: studentId,
+      p_pin: pin,
+      p_worksheet_id: result.worksheet_id,
+      p_question_no: qno,
+      p_attempt_id: attemptId,
+      p_reason: reportReason,
+      p_detail: reportDetail,
+    })
+    setReportSubmitting(false)
+    if (rpcErr) {
+      alert('신고 접수에 실패했습니다: ' + rpcErr.message)
+      return
+    }
+    setReportingQ(null)
+    setReportedQs((prev) => new Set(prev).add(qno))
   }
 
   const base = `/student/${classId}/${studentId}`
@@ -187,6 +218,49 @@ function StudentSchoolExamResultContent({ pin }) {
                 {!isMC && q.teacher_correct != null && (
                   <p style={{ fontSize: 11, color: THEME.primaryDark, margin: '4px 0 0', fontWeight: 600 }}>강사 확인 완료</p>
                 )}
+
+                <div style={{ marginTop: 8, borderTop: '1px solid #f2f2f8', paddingTop: 6 }}>
+                  {reportedQs.has(q.question_no) ? (
+                    <p style={{ fontSize: 11, color: THEME.inkMuted, margin: 0 }}>신고 접수됨 — 강사님이 확인할 예정이에요.</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openReport(q.question_no)}
+                      style={{ fontSize: 11, color: THEME.inkMuted, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      이 문항 정답/해설이 이상해요
+                    </button>
+                  )}
+
+                  {reportingQ === q.question_no && (
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <select
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        style={{ fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid #dcdef0', colorScheme: 'light' }}
+                      >
+                        <option>정답이 틀린 것 같아요</option>
+                        <option>해설이 문제 내용과 맞지 않아요</option>
+                        <option>기타</option>
+                      </select>
+                      <textarea
+                        value={reportDetail}
+                        onChange={(e) => setReportDetail(e.target.value)}
+                        placeholder="자세한 내용 (선택)"
+                        rows={2}
+                        style={{ fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid #dcdef0', fontFamily: 'inherit', resize: 'vertical' }}
+                      />
+                      <button
+                        type="button"
+                        disabled={reportSubmitting}
+                        onClick={() => submitReport(q.question_no)}
+                        style={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 700, color: '#fff', background: THEME.primary, border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
+                      >
+                        {reportSubmitting ? '접수 중...' : '신고하기'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}
