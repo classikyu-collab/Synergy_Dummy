@@ -83,7 +83,7 @@ export default function AdminStudentList() {
         <TableCard>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#fafaff' }}>
+              <tr style={{ background: T.bg }}>
                 <Th>이름</Th>
                 <Th>반</Th>
                 <Th>레벨</Th>

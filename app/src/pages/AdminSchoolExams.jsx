@@ -85,7 +85,7 @@ export default function AdminSchoolExams() {
         <TableCard>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#fafaff' }}>
+              <tr style={{ background: T.bg }}>
                 <Th>학년</Th>
                 <Th>단원</Th>
                 <Th>교과서</Th>
@@ -175,7 +175,7 @@ function ClassTextbookTable({ classes, mappings, onChanged, showToast }) {
     <TableCard>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ background: '#fafaff' }}>
+          <tr style={{ background: T.bg }}>
             <Th>반</Th>
             <Th>학년</Th>
             <Th>출판사/저자</Th>

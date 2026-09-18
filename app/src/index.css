@@ -15,6 +15,22 @@
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
+  /* 관리자/강사 화면 (lib/theme.js ADMIN_THEME) — 시스템 다크모드 설정을 따른다 */
+  --admin-primary: #5b5bf0;
+  --admin-primary-dark: #4341c9;
+  --admin-primary-tint: #eef0fe;
+  --admin-bg: #f7f7fb;
+  --admin-surface: #ffffff;
+  --admin-border: #eceef7;
+  --admin-ink: #1f2333;
+  --admin-ink-muted: #5c5f70;
+  --admin-ink-faint: #9296ab;
+  --admin-success-bg: #d9f2e3;
+  --admin-success-text: #186238;
+  --admin-danger-bg: #fbdcdc;
+  --admin-danger-text: #a02323;
+  --admin-modal-backdrop: rgba(20, 20, 40, 0.32);
+
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light;
@@ -43,6 +59,21 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+    --admin-primary: #7b7bff;
+    --admin-primary-dark: #9d9dff;
+    --admin-primary-tint: #2a2a4a;
+    --admin-bg: #15161d;
+    --admin-surface: #1e2029;
+    --admin-border: #2c2f3a;
+    --admin-ink: #e8e9f0;
+    --admin-ink-muted: #a8abbb;
+    --admin-ink-faint: #767a8c;
+    --admin-success-bg: #16382a;
+    --admin-success-text: #6fd9a0;
+    --admin-danger-bg: #3a1f22;
+    --admin-danger-text: #f28b8b;
+    --admin-modal-backdrop: rgba(0, 0, 0, 0.6);
   }
 
   #social .button-icon {

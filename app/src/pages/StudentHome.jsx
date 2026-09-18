@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { todayStr } from '../lib/statusColors'
 import { STUDENT_THEME as THEME } from '../lib/theme'
@@ -114,11 +114,21 @@ export default function StudentHome() {
 
 function StudentHomeContent() {
   const { classId, studentId } = useParams()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [items, setItems] = useState(null)
   const [announcements, setAnnouncements] = useState([])
   const [error, setError] = useState('')
   const { open, openMenu, closeMenu } = useStudentMenu()
+
+  function handleLogout() {
+    try {
+      localStorage.removeItem(`synapse_student_pin_${studentId}`)
+    } catch {
+      // localStorage 접근 불가 시에도 이동은 계속 진행
+    }
+    navigate('/student')
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -182,6 +192,24 @@ function StudentHomeContent() {
         }}
       >
         <StudentMenuButton onClick={openMenu} />
+        <button
+          onClick={handleLogout}
+          style={{
+            position: 'absolute',
+            top: 18,
+            right: 18,
+            color: 'rgba(255,255,255,0.85)',
+            background: 'rgba(255,255,255,0.16)',
+            border: 'none',
+            borderRadius: 999,
+            padding: '6px 14px',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          로그아웃
+        </button>
         <p style={{ fontSize: 19, fontWeight: 700, margin: '38px 20px 4px 46px', lineHeight: 1.4 }}>{profile.name} 학생, 오늘도 힘내봐요!</p>
         <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.78)', margin: '0 20px 0 46px' }}>
           {profile.class_name} · {profile.difficulty_tier ?? '레벨 미지정'}

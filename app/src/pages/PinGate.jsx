@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import HomeScreenGuideModal, { hasSeenHomeGuide, markHomeGuideSeen, isStandaloneDisplay } from './HomeScreenGuide'
 
 // 학부모/학생 PIN 로그인 공용 게이트. 이름(또는 반) 선택 직후, 진짜 콘텐츠를 보여주기 전에
 // 4자리 PIN을 확인한다. 최초 PIN(0000)이면 강제로 새 PIN을 설정하게 하고,
@@ -16,6 +17,8 @@ export default function PinGate({ subjectId, verifiedRpc, setRpc, storagePrefix,
   const [submitting, setSubmitting] = useState(false)
 
   const storageKey = `${storagePrefix}_${subjectId}`
+  const homeGuideKey = `synapse_home_guide_seen_${storagePrefix}_${subjectId}`
+  const [homeGuideAcked, setHomeGuideAcked] = useState(() => hasSeenHomeGuide(homeGuideKey) || isStandaloneDisplay())
 
   useEffect(() => {
     let cancelled = false
@@ -92,7 +95,20 @@ export default function PinGate({ subjectId, verifiedRpc, setRpc, storagePrefix,
     setStage('done')
   }
 
-  if (stage === 'done') return children(pin)
+  if (stage === 'done') {
+    if (!homeGuideAcked) {
+      return (
+        <HomeScreenGuideModal
+          theme={theme}
+          onDone={() => {
+            markHomeGuideSeen(homeGuideKey)
+            setHomeGuideAcked(true)
+          }}
+        />
+      )
+    }
+    return children(pin)
+  }
 
   if (stage === 'checking') {
     return <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>불러오는 중...</div>

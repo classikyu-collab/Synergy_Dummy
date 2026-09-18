@@ -31,7 +31,7 @@ function useClassStudents(classId, reloadToken) {
 }
 
 function ListBox({ children }) {
-  return <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, height: 260, overflowY: 'auto', background: '#fafaff' }}>{children}</div>
+  return <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, height: 260, overflowY: 'auto', background: T.bg }}>{children}</div>
 }
 
 // 학생 관리 페이지의 "일괄 반 배정"과, 시간표 관리의 반 카드 "학생 배정" 버튼이 함께 쓰는 공용 모달.

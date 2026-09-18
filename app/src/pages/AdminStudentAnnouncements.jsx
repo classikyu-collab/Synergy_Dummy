@@ -19,12 +19,9 @@ import {
   ModalTitle,
   InlineError,
 } from '../lib/adminUI'
+import { todayStr } from '../lib/statusColors'
 
 const AUDIENCE_TYPES = ['전체', '반', '개별']
-
-function todayStr() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function statusOf(a) {
   if (!a.is_active) return { label: '비활성', positive: false }
@@ -45,7 +42,7 @@ export default function AdminStudentAnnouncements() {
   async function reload() {
     const { data, error: fetchErr } = await supabase
       .from('student_announcements')
-      .select('id, title, content, audience_type, class_id, classes(name), starts_at, ends_at, is_active, created_at')
+      .select('id, title, content, audience_type, class_id, classes(name), starts_at, ends_at, is_active, notify_student, notify_parent, last_pushed_at, created_at')
       .order('created_at', { ascending: false })
     if (fetchErr) {
       setError('공지사항을 불러오지 못했습니다: ' + fetchErr.message)
@@ -85,11 +82,25 @@ export default function AdminStudentAnnouncements() {
     reload()
   }
 
+  async function handleSendPush(a) {
+    const confirmMsg = a.last_pushed_at
+      ? '이미 한 번 발송한 공지사항이에요. 알림을 다시 보낼까요?'
+      : '학생/학부모 알림을 구독한 사람들에게 푸시 알림을 보낼까요?'
+    if (!confirm(confirmMsg)) return
+    const { data: result, error: fnErr } = await supabase.functions.invoke('send-announcement-push', { body: { announcementId: a.id } })
+    if (fnErr) {
+      showToast('알림 발송 실패: ' + fnErr.message, 'error')
+      return
+    }
+    showToast(`알림을 ${result.sent}건 발송했습니다. (구독자 ${result.total}명 중)`)
+    reload()
+  }
+
   return (
     <div>
       <PageHeader
-        title="학생 대상 공지사항"
-        subtitle="학생들에게 노출할 공지입니다. (직원 대상 공지와는 완전히 별개이며, 학생 화면 노출 위치는 추후 확정 예정)"
+        title="학생/학부모 공지"
+        subtitle="학생과 학부모에게 노출할 공지입니다. (직원 대상 공지와는 완전히 별개입니다)"
         action={<PrimaryButton onClick={() => setCreating(true)}>+ 공지 등록</PrimaryButton>}
       />
 
@@ -103,6 +114,7 @@ export default function AdminStudentAnnouncements() {
           {announcements.map((a) => {
             const status = statusOf(a)
             const audienceLabel = a.audience_type === '반' ? `반 · ${a.classes?.name ?? '삭제됨'}` : a.audience_type === '개별' ? '개별 학생' : '전체'
+            const recipientLabel = a.notify_student && a.notify_parent ? '학생+학부모' : a.notify_student ? '학생만' : a.notify_parent ? '학부모만' : '받는 사람 없음'
             return (
               <div key={a.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: '14px 18px', opacity: a.is_active ? 1 : 0.6 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -114,6 +126,9 @@ export default function AdminStudentAnnouncements() {
                       <Badge bg={T.primaryTint} color={T.primaryDark}>
                         {audienceLabel}
                       </Badge>
+                      <Badge bg={T.border} color={T.inkMuted}>
+                        {recipientLabel}
+                      </Badge>
                       {(a.starts_at || a.ends_at) && (
                         <span style={{ fontSize: 11.5, color: T.inkFaint }}>
                           {a.starts_at ?? '제한없음'} ~ {a.ends_at ?? '제한없음'}
@@ -121,9 +136,13 @@ export default function AdminStudentAnnouncements() {
                       )}
                     </div>
                     <p style={{ margin: '0 0 4px', fontSize: 14.5, fontWeight: 700, color: T.ink }}>{a.title}</p>
-                    <p style={{ margin: 0, fontSize: 13, color: T.inkMuted, whiteSpace: 'pre-wrap' }}>{a.content}</p>
+                    <p style={{ margin: '0 0 6px', fontSize: 13, color: T.inkMuted, whiteSpace: 'pre-wrap' }}>{a.content}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: T.inkFaint }}>
+                      {a.last_pushed_at ? `📨 알림 발송됨 · ${new Date(a.last_pushed_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : '알림 발송 안 함'}
+                    </p>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <SmallButton onClick={() => handleSendPush(a)}>{a.last_pushed_at ? '알림 다시 발송' : '알림 발송'}</SmallButton>
                     <SmallButton onClick={() => setEditing(a)}>수정</SmallButton>
                     <SmallButton onClick={() => toggleActive(a)}>{a.is_active ? '비활성화' : '활성화'}</SmallButton>
                   </div>
@@ -175,7 +194,7 @@ const textareaStyle = {
   border: `1px solid ${T.border}`,
   borderRadius: 8,
   boxSizing: 'border-box',
-  background: '#fff',
+  background: T.surface,
   color: T.ink,
   colorScheme: 'light',
   resize: 'vertical',
@@ -256,6 +275,8 @@ function AnnouncementModal({ announcement, classes, onClose, onDone, onDelete })
   const [classId, setClassId] = useState(announcement?.class_id ?? '')
   const [startsAt, setStartsAt] = useState(announcement?.starts_at ?? '')
   const [endsAt, setEndsAt] = useState(announcement?.ends_at ?? '')
+  const [notifyStudent, setNotifyStudent] = useState(announcement?.notify_student ?? true)
+  const [notifyParent, setNotifyParent] = useState(announcement?.notify_parent ?? true)
   const [selectedStudents, setSelectedStudents] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
@@ -282,6 +303,10 @@ function AnnouncementModal({ announcement, classes, onClose, onDone, onDelete })
       setLocalError('대상 학생을 한 명 이상 선택해주세요.')
       return
     }
+    if (!notifyStudent && !notifyParent) {
+      setLocalError('받는 사람을 학생/학부모 중 한 명 이상 선택해주세요.')
+      return
+    }
     setLocalError('')
     setSubmitting(true)
 
@@ -292,6 +317,8 @@ function AnnouncementModal({ announcement, classes, onClose, onDone, onDelete })
       class_id: audienceType === '반' ? classId : null,
       starts_at: startsAt || null,
       ends_at: endsAt || null,
+      notify_student: notifyStudent,
+      notify_parent: notifyParent,
     }
 
     let announcementId = announcement?.id
@@ -324,7 +351,7 @@ function AnnouncementModal({ announcement, classes, onClose, onDone, onDelete })
     }
 
     setSubmitting(false)
-    onDone(announcement ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.')
+    onDone(announcement ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다. 목록에서 "알림 발송" 버튼으로 원하는 때에 알림을 보낼 수 있어요.')
   }
 
   return (
@@ -364,14 +391,26 @@ function AnnouncementModal({ announcement, classes, onClose, onDone, onDelete })
             <StudentPicker selected={selectedStudents} onChange={setSelectedStudents} />
           </Field>
         )}
+        <Field label="받는 사람">
+          <div style={{ display: 'flex', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: T.ink, cursor: 'pointer' }}>
+              <input type="checkbox" checked={notifyStudent} onChange={(e) => setNotifyStudent(e.target.checked)} />
+              학생
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: T.ink, cursor: 'pointer' }}>
+              <input type="checkbox" checked={notifyParent} onChange={(e) => setNotifyParent(e.target.checked)} />
+              학부모
+            </label>
+          </div>
+        </Field>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <Field label="게시 시작일 (선택)">
+            <Field label="노출 시작일 (선택)">
               <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
             </Field>
           </div>
           <div style={{ flex: 1 }}>
-            <Field label="게시 종료일 (선택)">
+            <Field label="노출 종료일 (선택)">
               <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
             </Field>
           </div>

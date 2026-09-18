@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { supabase, translateAuthError } from '../lib/supabaseClient'
+import { ADMIN_THEME as T } from '../lib/theme'
+import { Field, Input, PrimaryButton, GhostButton, InlineError } from '../lib/adminUI'
 
 export default function ChangePassword({ onChanged, onCancel, forced = true }) {
   const [password, setPassword] = useState('')
@@ -43,45 +45,30 @@ export default function ChangePassword({ onChanged, onCancel, forced = true }) {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '80px auto', fontFamily: 'sans-serif' }}>
-      <h2>비밀번호 변경</h2>
-      <p>{forced ? '최초 로그인입니다. 새 비밀번호로 변경해주세요.' : '새 비밀번호를 입력해주세요.'}</p>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label>새 비밀번호</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>새 비밀번호 확인</label>
-          <input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
-          {loading ? '변경 중...' : '변경하기'}
-        </button>
-        {!forced && onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            style={{ width: '100%', padding: 10, marginTop: 8 }}
-          >
-            취소
-          </button>
-        )}
-      </form>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: T.bg, fontFamily: "'Noto Sans KR', -apple-system, sans-serif" }}>
+      <div style={{ width: 340, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 18, padding: 32, boxShadow: '0 8px 30px -12px rgba(30,30,80,0.18)' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, margin: '0 0 6px', color: T.ink }}>비밀번호 변경</h2>
+        <p style={{ fontSize: 12.5, color: T.inkMuted, margin: '0 0 22px' }}>{forced ? '최초 로그인입니다. 새 비밀번호로 변경해주세요.' : '새 비밀번호를 입력해주세요.'}</p>
+        <form onSubmit={handleSubmit}>
+          <Field label="새 비밀번호">
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </Field>
+          <Field label="새 비밀번호 확인">
+            <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          </Field>
+          <InlineError>{error}</InlineError>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            {!forced && onCancel && (
+              <GhostButton type="button" onClick={onCancel} disabled={loading} style={{ flex: 1 }}>
+                취소
+              </GhostButton>
+            )}
+            <PrimaryButton type="submit" disabled={loading} style={{ flex: 1, padding: 12, fontSize: 14 }}>
+              {loading ? '변경 중...' : '변경하기'}
+            </PrimaryButton>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

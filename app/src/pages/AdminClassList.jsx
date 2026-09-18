@@ -96,7 +96,7 @@ export default function AdminClassList() {
           renderTable={(half) => (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#fafaff' }}>
+                <tr style={{ background: T.bg }}>
                   <Th sort={sortKey === 'name' ? sortDir : null} onClick={() => toggleSort('name')}>
                     반 이름
                   </Th>

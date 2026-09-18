@@ -155,7 +155,7 @@ const textareaStyle = {
   border: `1px solid ${T.border}`,
   borderRadius: 8,
   boxSizing: 'border-box',
-  background: '#fff',
+  background: T.surface,
   color: T.ink,
   colorScheme: 'light',
   resize: 'vertical',

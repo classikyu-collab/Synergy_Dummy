@@ -3,10 +3,14 @@ import StaffApp from './StaffApp'
 import AdminApp from './AdminApp'
 import ParentView from './pages/ParentView'
 import ParentDetail from './pages/ParentDetail'
+import ParentHomework from './pages/ParentHomework'
+import ParentCoachingList from './pages/ParentCoachingList'
+import ParentAnnouncements from './pages/ParentAnnouncements'
 import StudentClassSelect from './pages/StudentClassSelect'
 import StudentNameSelect from './pages/StudentNameSelect'
 import StudentHome from './pages/StudentHome'
 import StudentCoachingList from './pages/StudentCoachingList'
+import StudentHomework from './pages/StudentHomework'
 import StudentMockExamList from './pages/StudentMockExamList'
 import StudentMockExamSheet from './pages/StudentMockExamSheet'
 import StudentMockExamResult from './pages/StudentMockExamResult'
@@ -35,6 +39,7 @@ export default function App() {
         <Route path="/student/:classId" element={<StudentNameSelect />} />
         <Route path="/student/:classId/:studentId" element={<StudentHome />} />
         <Route path="/student/:classId/:studentId/coaching" element={<StudentCoachingList />} />
+        <Route path="/student/:classId/:studentId/homework" element={<StudentHomework />} />
         <Route path="/student/:classId/:studentId/mock-exam" element={<StudentMockExamList />} />
         <Route path="/student/:classId/:studentId/mock-exam/result/:attemptId" element={<StudentMockExamResult />} />
         <Route path="/student/:classId/:studentId/mock-exam/:examId" element={<StudentMockExamSheet />} />
@@ -46,6 +51,9 @@ export default function App() {
         <Route path="/student/:classId/:studentId/reading/:passageId" element={<StudentReadingRecord />} />
         <Route path="/parent" element={<ParentView />} />
         <Route path="/parent/:studentId" element={<ParentDetail />} />
+        <Route path="/parent/:studentId/homework" element={<ParentHomework />} />
+        <Route path="/parent/:studentId/coaching" element={<ParentCoachingList />} />
+        <Route path="/parent/:studentId/announcements" element={<ParentAnnouncements />} />
         <Route path="/admin" element={<AdminApp />} />
         <Route path="*" element={<Navigate to="/staff" replace />} />
       </Routes>

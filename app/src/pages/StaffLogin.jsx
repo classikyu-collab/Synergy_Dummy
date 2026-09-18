@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { supabase, staffIdToEmail } from '../lib/supabaseClient'
+import { ADMIN_THEME as T } from '../lib/theme'
+import { Field, Input, PrimaryButton, InlineError } from '../lib/adminUI'
 
 export default function StaffLogin({ onLoggedIn }) {
   const [id, setId] = useState('')
@@ -40,35 +42,23 @@ export default function StaffLogin({ onLoggedIn }) {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '80px auto', fontFamily: 'sans-serif' }}>
-      <h2>직원 로그인</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label>아이디</label>
-          <input
-            type="text"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-            placeholder="예: USR-001"
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>비밀번호</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
-          {loading ? '로그인 중...' : '로그인'}
-        </button>
-      </form>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: T.bg, fontFamily: "'Noto Sans KR', -apple-system, sans-serif" }}>
+      <div style={{ width: 340, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 18, padding: 32, boxShadow: '0 8px 30px -12px rgba(30,30,80,0.18)' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: T.primaryDark, margin: '0 0 4px' }}>SYNAPSE</p>
+        <h2 style={{ fontSize: 19, fontWeight: 800, margin: '0 0 24px', color: T.ink }}>직원 로그인</h2>
+        <form onSubmit={handleSubmit}>
+          <Field label="아이디">
+            <Input type="text" value={id} onChange={(e) => setId(e.target.value)} placeholder="예: USR-001" required />
+          </Field>
+          <Field label="비밀번호">
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </Field>
+          <InlineError>{error}</InlineError>
+          <PrimaryButton type="submit" disabled={loading} style={{ width: '100%', marginTop: 4, padding: 12, fontSize: 14 }}>
+            {loading ? '로그인 중...' : '로그인'}
+          </PrimaryButton>
+        </form>
+      </div>
     </div>
   )
 }

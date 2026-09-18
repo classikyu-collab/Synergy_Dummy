@@ -90,7 +90,7 @@ export default function AdminMockExams() {
         <TableCard>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#fafaff' }}>
+              <tr style={{ background: T.bg }}>
                 <Th>시험명</Th>
                 <Th w={70}>학년</Th>
                 <Th w={90}>시행</Th>
@@ -184,7 +184,7 @@ const textareaStyle = {
   border: `1px solid ${T.border}`,
   borderRadius: 8,
   boxSizing: 'border-box',
-  background: '#fff',
+  background: T.surface,
   color: T.ink,
   colorScheme: 'light',
   resize: 'vertical',
@@ -422,7 +422,7 @@ function AnswerPreview({ answers, points, includesListening }) {
               borderRadius: 5,
               padding: '3px 2px',
               textAlign: 'center',
-              background: dimmed ? '#f3f4f6' : '#fff',
+              background: dimmed ? T.bg : T.surface,
               opacity: dimmed ? 0.5 : 1,
             }}
           >

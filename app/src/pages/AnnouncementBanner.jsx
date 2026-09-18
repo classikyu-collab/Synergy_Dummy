@@ -17,11 +17,11 @@ export default function AnnouncementBanner() {
   if (!announcements || announcements.length === 0) return null
 
   return (
-    <div style={{ background: '#fff8e1', border: '1px solid #e0c060', borderRadius: 6, padding: 12, marginBottom: 16 }}>
-      <strong>공지사항</strong>
-      <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+    <div style={{ background: '#fff7ed', border: '1px solid #fdd9a8', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: '#92600a' }}>공지사항</p>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
         {announcements.map((a) => (
-          <li key={a.id} style={{ whiteSpace: 'pre-wrap', marginBottom: 4 }}>
+          <li key={a.id} style={{ whiteSpace: 'pre-wrap', marginBottom: 4, fontSize: 13, color: '#7a4f08', lineHeight: 1.5 }}>
             {a.content}
           </li>
         ))}

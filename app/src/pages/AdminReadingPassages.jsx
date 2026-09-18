@@ -113,7 +113,7 @@ export default function AdminReadingPassages() {
         <TableCard>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#fafaff' }}>
+              <tr style={{ background: T.bg }}>
                 <Th>제목</Th>
                 <Th w={80}>단어수</Th>
                 <Th w={100}>권장시간</Th>
@@ -198,7 +198,7 @@ const textareaStyle = {
   border: `1px solid ${T.border}`,
   borderRadius: 8,
   boxSizing: 'border-box',
-  background: '#fff',
+  background: T.surface,
   color: T.ink,
   colorScheme: 'light',
   resize: 'vertical',

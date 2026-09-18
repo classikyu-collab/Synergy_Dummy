@@ -1,153 +1,119 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { STATUS_COLORS, classifyStatus, todayStr } from '../lib/statusColors'
+import { todayStr } from '../lib/statusColors'
 import { PARENT_THEME as THEME } from '../lib/theme'
+import HomeScreenGuideModal, { hasSeenHomeGuide, markHomeGuideSeen, isStandaloneDisplay } from './HomeScreenGuide'
+import ParentMenuDrawer, { ParentMenuButton, useParentMenu } from './ParentMenu'
+import ParentPinGate from './ParentPinGate'
+import { loadKnownChildren, rememberChild } from '../lib/parentChildren'
+import { loadSeenIds } from '../lib/announcementSeen'
 
-function StatusBadge({ label, isDone }) {
-  const kind = classifyStatus(label, isDone)
-  const c = STATUS_COLORS[kind]
-  return (
-    <span
+const TILE_ICONS = {
+  coaching: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+    </svg>
+  ),
+  homework: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M8 2.5h8v2H8z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
+  announcements: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l18-5v12L3 14v-3z" />
+      <path d="M7 14v4a2 2 0 002 2h1" />
+    </svg>
+  ),
+  switch: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3l4 4-4 4" />
+      <path d="M21 7H9a4 4 0 00-4 4" />
+      <path d="M7 21l-4-4 4-4" />
+      <path d="M3 17h12a4 4 0 004-4" />
+    </svg>
+  ),
+}
+
+function Tile({ icon, label, sublabel, to, onClick, badgeCount }) {
+  const content = (
+    <div
       style={{
-        fontSize: 14,
-        fontWeight: 600,
-        padding: '5px 12px',
-        borderRadius: 999,
-        background: c.bg,
-        color: c.text,
-        border: `1px solid ${c.border}`,
+        position: 'relative',
+        background: '#fff',
+        borderRadius: 18,
+        padding: '18px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        boxShadow: '0 4px 14px -8px rgba(43,38,33,0.18)',
+        height: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        cursor: onClick ? 'pointer' : 'default',
+        border: 'none',
+        textAlign: 'left',
+        width: '100%',
+        fontFamily: 'inherit',
       }}
     >
-      {label ?? '미체크'}
-    </span>
-  )
-}
-
-function pinStorageKey(studentId) {
-  return `synapse_parent_pin_${studentId}`
-}
-
-function PinGate({ studentId, onVerified }) {
-  const [stage, setStage] = useState('checking') // checking | enter | change | error
-  const [pin, setPin] = useState('')
-  const [oldPin, setOldPin] = useState('')
-  const [newPin, setNewPin] = useState('')
-  const [newPin2, setNewPin2] = useState('')
-  const [msg, setMsg] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    async function checkStored() {
-      const stored = localStorage.getItem(pinStorageKey(studentId))
-      if (!stored) {
-        if (!cancelled) setStage('enter')
-        return
-      }
-      const { data, error: err } = await supabase.rpc('verify_parent_pin', { p_student_id: studentId, p_pin: stored })
-      if (cancelled) return
-      const row = data?.[0]
-      if (err || !row?.ok) {
-        localStorage.removeItem(pinStorageKey(studentId))
-        setStage('enter')
-        return
-      }
-      if (row.must_change) {
-        setOldPin(stored)
-        setStage('change')
-        return
-      }
-      onVerified(stored)
-    }
-    checkStored()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId])
-
-  async function handleEnterSubmit(e) {
-    e.preventDefault()
-    setMsg('')
-    setSubmitting(true)
-    const { data, error: err } = await supabase.rpc('verify_parent_pin', { p_student_id: studentId, p_pin: pin })
-    setSubmitting(false)
-    const row = data?.[0]
-    if (err || !row?.ok) {
-      setMsg('PIN이 올바르지 않습니다.')
-      return
-    }
-    if (row.must_change) {
-      setOldPin(pin)
-      setStage('change')
-      return
-    }
-    localStorage.setItem(pinStorageKey(studentId), pin)
-    onVerified(pin)
-  }
-
-  async function handleChangeSubmit(e) {
-    e.preventDefault()
-    setMsg('')
-    if (!/^[0-9]{4}$/.test(newPin)) {
-      setMsg('새 PIN은 숫자 4자리로 입력해주세요.')
-      return
-    }
-    if (newPin !== newPin2) {
-      setMsg('새 PIN이 서로 일치하지 않습니다.')
-      return
-    }
-    setSubmitting(true)
-    const { data: ok, error: err } = await supabase.rpc('set_parent_pin', { p_student_id: studentId, p_old_pin: oldPin, p_new_pin: newPin })
-    setSubmitting(false)
-    if (err || !ok) {
-      setMsg('PIN 변경에 실패했습니다.')
-      return
-    }
-    localStorage.setItem(pinStorageKey(studentId), newPin)
-    onVerified(newPin)
-  }
-
-  if (stage === 'checking') {
-    return <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>불러오는 중...</div>
-  }
-
-  const boxStyle = { maxWidth: 340, margin: '60px auto', fontFamily: "'Noto Sans KR', -apple-system, sans-serif", padding: '0 20px' }
-  const inputStyle = { width: '100%', padding: '12px 14px', fontSize: 16, letterSpacing: 4, textAlign: 'center', border: '1px solid #dcece9', borderRadius: 12, boxSizing: 'border-box', marginBottom: 10, colorScheme: 'light' }
-
-  if (stage === 'change') {
-    return (
-      <div style={boxStyle}>
-        <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>PIN 변경이 필요합니다</p>
-        <p style={{ fontSize: 13, color: '#7c8f8c', marginBottom: 16 }}>처음 이용하시는군요. 앞으로 사용하실 4자리 PIN을 설정해주세요.</p>
-        <form onSubmit={handleChangeSubmit}>
-          <input type="text" inputMode="numeric" maxLength={4} placeholder="새 PIN 4자리" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} style={inputStyle} required />
-          <input type="text" inputMode="numeric" maxLength={4} placeholder="새 PIN 확인" value={newPin2} onChange={(e) => setNewPin2(e.target.value.replace(/\D/g, ''))} style={inputStyle} required />
-          {msg && <p style={{ color: 'red', fontSize: 12.5 }}>{msg}</p>}
-          <button type="submit" disabled={submitting} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 15 }}>
-            {submitting ? '설정 중...' : 'PIN 설정하기'}
-          </button>
-        </form>
+      {badgeCount > 0 && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            fontSize: 10,
+            fontWeight: 800,
+            color: '#fff',
+            background: THEME.examBorder ?? '#e2544d',
+            borderRadius: 999,
+            padding: '2px 7px',
+          }}
+        >
+          {badgeCount}
+        </span>
+      )}
+      <div
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 12,
+          background: THEME.bg,
+          color: THEME.primary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {icon}
       </div>
+      <div>
+        <p style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 3px', color: THEME.ink, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{label}</p>
+        <p style={{ fontSize: 12, color: THEME.inkMuted, margin: 0 }}>{sublabel}</p>
+      </div>
+    </div>
+  )
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        style={{ background: 'none', padding: 0, border: 'none', display: 'block', width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+      >
+        {content}
+      </button>
     )
   }
-
   return (
-    <div style={boxStyle}>
-      <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>PIN 입력</p>
-      <p style={{ fontSize: 13, color: '#7c8f8c', marginBottom: 16 }}>자녀 정보 보호를 위해 4자리 PIN이 필요합니다. 처음이시라면 초기 PIN(0000)을 입력해주세요.</p>
-      <form onSubmit={handleEnterSubmit}>
-        <input type="text" inputMode="numeric" maxLength={4} placeholder="PIN 4자리" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} style={inputStyle} autoFocus required />
-        {msg && <p style={{ color: 'red', fontSize: 12.5 }}>{msg}</p>}
-        <button type="submit" disabled={submitting} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 15 }}>
-          {submitting ? '확인 중...' : '확인'}
-        </button>
-      </form>
-      <Link to="/parent" style={{ display: 'block', textAlign: 'center', marginTop: 14, fontSize: 12.5, color: '#7c8f8c' }}>
-        ← 다시 검색하기
-      </Link>
-    </div>
+    <Link to={to} style={{ display: 'block', minWidth: 0, boxSizing: 'border-box' }}>
+      {content}
+    </Link>
   )
 }
 
@@ -156,17 +122,25 @@ export default function ParentDetail() {
   const [verifiedPin, setVerifiedPin] = useState(null)
   const [profile, setProfile] = useState(null)
   const [items, setItems] = useState(null)
+  const [homework, setHomework] = useState(null)
+  const [announcements, setAnnouncements] = useState([])
   const [nextMakeup, setNextMakeup] = useState(null)
   const [error, setError] = useState('')
+  const homeGuideKey = `synapse_home_guide_seen_parent_${studentId}`
+  const [homeGuideAcked, setHomeGuideAcked] = useState(() => hasSeenHomeGuide(homeGuideKey) || isStandaloneDisplay())
+  const [showGuideAgain, setShowGuideAgain] = useState(false)
+  const { open: menuOpen, autoSwitcher, openMenu, closeMenu } = useParentMenu()
 
   useEffect(() => {
     if (!verifiedPin) return
     let cancelled = false
     async function load() {
-      const [{ data: profileRows, error: profileErr }, { data: itemRows, error: itemErr }, { data: makeupDate }] = await Promise.all([
+      const [{ data: profileRows, error: profileErr }, { data: itemRows, error: itemErr }, { data: makeupDate }, { data: hwRows }, { data: annRows }] = await Promise.all([
         supabase.rpc('get_parent_profile', { p_student_id: studentId, p_pin: verifiedPin }),
         supabase.rpc('get_parent_coaching_items', { p_student_id: studentId, p_pin: verifiedPin }),
         supabase.rpc('get_parent_next_makeup', { p_student_id: studentId, p_pin: verifiedPin }),
+        supabase.rpc('get_parent_homework_board', { p_student_id: studentId, p_pin: verifiedPin }),
+        supabase.rpc('list_parent_announcements', { p_student_id: studentId, p_pin: verifiedPin }),
       ])
       if (cancelled) return
       if (profileErr || itemErr || !profileRows?.length) {
@@ -174,8 +148,11 @@ export default function ParentDetail() {
         return
       }
       setProfile(profileRows[0])
+      rememberChild(studentId, profileRows[0].name)
       setItems(itemRows)
       setNextMakeup(makeupDate ?? null)
+      setHomework(hwRows ?? [])
+      setAnnouncements(annRows ?? [])
     }
     load()
     return () => {
@@ -184,14 +161,26 @@ export default function ParentDetail() {
   }, [studentId, verifiedPin])
 
   if (!verifiedPin) {
-    return <PinGate studentId={studentId} onVerified={setVerifiedPin} />
+    return <ParentPinGate studentId={studentId} onVerified={setVerifiedPin} />
+  }
+
+  if (!homeGuideAcked) {
+    return (
+      <HomeScreenGuideModal
+        theme={THEME}
+        onDone={() => {
+          markHomeGuideSeen(homeGuideKey)
+          setHomeGuideAcked(true)
+        }}
+      />
+    )
   }
 
   if (error) {
     return (
       <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
         <p style={{ color: 'red' }}>{error}</p>
-        <Link to="/parent">← 다시 검색하기</Link>
+        <Link to="/parent?new=1">← 다시 검색하기</Link>
       </div>
     )
   }
@@ -203,7 +192,20 @@ export default function ParentDetail() {
   const todayItems = items.filter((it) => it.date === today)
   const resolved = todayItems.filter((it) => it.is_done).length
   const total = todayItems.length
-  const pct = total ? Math.round((resolved / total) * 100) : 0
+  const coachingSublabel = total === 0 ? '오늘 등록된 항목 없음' : `오늘 ${resolved}/${total}개 완료`
+
+  const nextDate = homework && homework.length > 0 ? [...new Set(homework.map((it) => it.posted_date))].sort((a, b) => (a < b ? 1 : -1))[0] : null
+  const nextHomeworkCount = nextDate ? homework.filter((it) => it.posted_date === nextDate).length : 0
+  const homeworkSublabel = nextDate ? `${nextHomeworkCount}개 등록됨` : '등록된 숙제 없음'
+
+  const seenAnnIds = loadSeenIds(studentId, 'parent')
+  const unreadAnnouncements = announcements.filter((a) => !seenAnnIds.has(a.id)).length
+  const announcementsSublabel = announcements.length === 0 ? '새 소식 없음' : `${announcements.length}개의 소식`
+
+  const otherChildrenCount = loadKnownChildren().filter((c) => c.id !== studentId).length
+  const switchSublabel = otherChildrenCount === 0 ? '등록된 다른 자녀 없음' : `${otherChildrenCount}명 확인 가능`
+
+  const base = `/parent/${studentId}`
 
   return (
     <div
@@ -218,27 +220,30 @@ export default function ParentDetail() {
       }}
     >
       <div style={{ position: 'relative', background: `linear-gradient(135deg, ${THEME.primary} 0%, ${THEME.primaryDark} 100%)`, color: '#fff', padding: '22px 20px 26px', borderRadius: '0 0 28px 28px' }}>
-        <Link
-          to="/parent"
-          style={{
-            position: 'absolute',
-            top: 18,
-            right: 18,
-            color: 'rgba(255,255,255,0.85)',
-            background: 'rgba(255,255,255,0.16)',
-            borderRadius: 999,
-            padding: '6px 14px',
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        >
-          다시 검색
-        </Link>
-        <p style={{ fontSize: 19, fontWeight: 700, margin: '0 40px 4px 0', lineHeight: 1.4 }}>{profile.name} 학생 학부모님, 안녕하세요.</p>
-        <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.78)', margin: 0 }}>학습 결과는 수업 다음날 오후 6시부터 확인하실 수 있어요.</p>
+        <ParentMenuButton onClick={openMenu} />
+        <p style={{ fontSize: 19, fontWeight: 700, margin: '38px 0 4px 46px', lineHeight: 1.4 }}>{profile.name} 학생의 학부모님, 안녕하세요.</p>
+        <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.78)', margin: '0 0 0 46px' }}>학습 결과는 수업 다음날 오후 6시부터 확인하실 수 있어요.</p>
       </div>
 
       <div style={{ padding: '18px 16px 28px' }}>
+        <button
+          type="button"
+          onClick={() => setShowGuideAgain(true)}
+          style={{
+            display: 'block',
+            marginBottom: 14,
+            padding: 0,
+            background: 'none',
+            border: 'none',
+            color: THEME.inkMuted,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          📱 홈 화면에 추가하는 방법
+        </button>
+
         <div
           style={{
             background: '#fff',
@@ -249,7 +254,7 @@ export default function ParentDetail() {
             display: 'flex',
             alignItems: 'center',
             gap: 14,
-            boxShadow: '0 4px 14px -10px rgba(20,80,75,0.16)',
+            boxShadow: '0 4px 14px -10px rgba(43,38,33,0.16)',
           }}
         >
           <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: THEME.inkMuted }}>
@@ -268,7 +273,7 @@ export default function ParentDetail() {
               display: 'flex',
               gap: 12,
               alignItems: 'center',
-              boxShadow: '0 4px 14px -10px rgba(20,80,75,0.16)',
+              boxShadow: '0 4px 14px -10px rgba(43,38,33,0.16)',
             }}
           >
             <div style={{ width: 40, height: 40, borderRadius: 12, background: THEME.makeup.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -286,81 +291,16 @@ export default function ParentDetail() {
           </div>
         )}
 
-        {total > 0 && (
-          <div
-            style={{
-              background: '#fff',
-              border: '1px solid #dcece9',
-              borderRadius: 20,
-              padding: '14px 16px',
-              marginBottom: 18,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              boxShadow: '0 4px 14px -10px rgba(20,80,75,0.16)',
-            }}
-          >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                flexShrink: 0,
-                background: `conic-gradient(${THEME.primary} calc(${pct} * 1%), #e3efed 0)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 5,
-              }}
-            >
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: THEME.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 800, color: '#fff' }}>
-                {resolved}/{total}
-              </div>
-            </div>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>오늘 {resolved}개 완료했어요</p>
-              <p style={{ fontSize: 12.5, color: THEME.inkMuted, margin: '3px 0 0' }}>{total - resolved}개 남았어요</p>
-            </div>
-          </div>
-        )}
-
-        <p style={{ fontSize: 14, fontWeight: 700, margin: '0 0 10px' }}>오늘 결과</p>
-        {total === 0 && <p style={{ color: THEME.inkMuted, fontSize: 13 }}>오늘 등록된 항목이 없습니다.</p>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 22 }}>
-          {todayItems.map((it) => (
-            <div
-              key={it.item_id}
-              style={{
-                background: '#fff',
-                borderRadius: 16,
-                padding: 14,
-                borderLeft: `4px solid ${it.item_type === '시험' ? THEME.examBorder : THEME.primary}`,
-                boxShadow: '0 4px 14px -8px rgba(20,80,75,0.18)',
-              }}
-            >
-              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: it.item_type === '시험' ? '#fdeee3' : '#e6f7f5',
-                    color: it.item_type === '시험' ? '#b8571f' : THEME.primaryDark,
-                  }}
-                >
-                  {it.item_type}
-                </span>
-              </div>
-              <p style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.35, margin: '0 0 10px' }}>
-                {it.name}
-                {it.page ? ` (p.${it.page})` : ''}
-              </p>
-              <StatusBadge label={it.status_label} isDone={it.is_done} />
-            </div>
-          ))}
+        <p style={{ fontSize: 14, fontWeight: 700, margin: '0 0 10px' }}>바로가기</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12 }}>
+          <Tile icon={TILE_ICONS.coaching} label="최근 숙제/시험 결과 보기" sublabel={coachingSublabel} to={`${base}/coaching`} />
+          <Tile icon={TILE_ICONS.homework} label="다음 숙제 확인" sublabel={homeworkSublabel} to={`${base}/homework`} />
+          <Tile icon={TILE_ICONS.announcements} label="공지사항" sublabel={announcementsSublabel} to={`${base}/announcements`} badgeCount={unreadAnnouncements} />
+          <Tile icon={TILE_ICONS.switch} label="다른 자녀 전환" sublabel={switchSublabel} onClick={() => openMenu({ switcher: true })} />
         </div>
       </div>
+      {showGuideAgain && <HomeScreenGuideModal theme={THEME} onDone={() => setShowGuideAgain(false)} />}
+      <ParentMenuDrawer open={menuOpen} onClose={closeMenu} studentId={studentId} active="home" theme={THEME} autoSwitcher={autoSwitcher} />
     </div>
   )
 }

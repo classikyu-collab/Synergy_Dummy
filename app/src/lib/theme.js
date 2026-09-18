@@ -7,26 +7,31 @@ export const STUDENT_THEME = {
   examBorder: '#f0975b',
 }
 
+// 관리자/강사 화면은 시스템 다크모드 설정을 따른다 (index.css의 --admin-* CSS 변수로 실제 값 정의).
 export const ADMIN_THEME = {
-  primary: '#5b5bf0',
-  primaryDark: '#4341c9',
-  primaryTint: '#eef0fe',
-  bg: '#f7f7fb',
-  surface: '#ffffff',
-  border: '#eceef7',
-  ink: '#1f2333',
-  inkMuted: '#5c5f70',
-  inkFaint: '#9296ab',
-  success: { bg: '#d9f2e3', text: '#186238' },
-  danger: { bg: '#fbdcdc', text: '#a02323' },
+  primary: 'var(--admin-primary)',
+  primaryDark: 'var(--admin-primary-dark)',
+  primaryTint: 'var(--admin-primary-tint)',
+  bg: 'var(--admin-bg)',
+  surface: 'var(--admin-surface)',
+  border: 'var(--admin-border)',
+  ink: 'var(--admin-ink)',
+  inkMuted: 'var(--admin-ink-muted)',
+  inkFaint: 'var(--admin-ink-faint)',
+  success: { bg: 'var(--admin-success-bg)', text: 'var(--admin-success-text)' },
+  danger: { bg: 'var(--admin-danger-bg)', text: 'var(--admin-danger-text)' },
+  modalBackdrop: 'var(--admin-modal-backdrop)',
 }
 
+// A안(레이아웃: 그라데이션 헤더 + 카드형 2x2 바로가기)의 구조에 B안(따뜻한 아이보리 톤)의
+// 색감을 합친 버전. 2026-09-18 학부모 홈 화면 디자인 시안 논의에서 확정.
 export const PARENT_THEME = {
-  primary: '#0d9488',
-  primaryDark: '#0a6f66',
-  bg: '#f2f8f7',
-  ink: '#1f2a29',
-  inkMuted: '#7c8f8c',
-  examBorder: '#f0975b',
+  primary: '#3f6259',
+  primaryDark: '#26433c',
+  bg: '#faf8f3',
+  ink: '#2b2621',
+  inkMuted: '#8a8171',
+  border: '#e8e1d3',
+  examBorder: '#a8623b',
   makeup: { bg: '#dbeafe', border: '#93c5fd', text: '#1d4ed8' },
 }

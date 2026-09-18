@@ -94,7 +94,7 @@ export default function AdminParentList() {
           renderTable={(half) => (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#fafaff' }}>
+                <tr style={{ background: T.bg }}>
                   <Th>학생</Th>
                   <Th>반</Th>
                   <Th>PIN 상태</Th>

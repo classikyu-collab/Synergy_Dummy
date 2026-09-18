@@ -11,7 +11,12 @@ export function classifyStatus(label, isDone) {
   return isDone ? 'done' : 'pending'
 }
 
+// 로컬 타임존 기준 YYYY-MM-DD. `date.toISOString().slice(0,10)`은 UTC로 변환하기 때문에
+// 한국 시간 자정~오전 9시 사이에는 하루 전 날짜가 나오는 버그가 있어 쓰지 않는다.
+export function toDateStr(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+}
+
 export function todayStr() {
-  const t = new Date()
-  return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0')
+  return toDateStr(new Date())
 }

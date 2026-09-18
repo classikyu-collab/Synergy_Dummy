@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ADMIN_THEME as T } from '../lib/theme'
 
 const GROUPS = [
@@ -15,8 +15,8 @@ const GROUPS = [
     label: '운영',
     items: [
       { label: '시간표 관리', key: 'schedule', ready: true },
-      { label: '직원 공지사항', key: 'staff-notices', ready: true },
-      { label: '학생 공지사항', key: 'student-notices', ready: true },
+      { label: '직원 공지', key: 'staff-notices', ready: true },
+      { label: '학생/학부모 공지', key: 'student-notices', ready: true },
     ],
   },
   {
@@ -35,20 +35,32 @@ const GROUPS = [
 
 export default function AdminTopNav({ active, admin, onLoggedOut, onChangePassword, onNavigate }) {
   const [openGroup, setOpenGroup] = useState(null)
+  const navRef = useRef(null)
+
+  useEffect(() => {
+    if (!openGroup) return
+    function handleClickOutside(e) {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        setOpenGroup(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [openGroup])
 
   return (
     <div
+      ref={navRef}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 32px',
         height: 56,
-        background: '#fff',
+        background: T.surface,
         borderBottom: `1px solid ${T.border}`,
         position: 'relative',
       }}
-      onMouseLeave={() => setOpenGroup(null)}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -67,8 +79,10 @@ export default function AdminTopNav({ active, admin, onLoggedOut, onChangePasswo
         <nav style={{ display: 'flex', gap: 4 }}>
           <TopTab label="개요" activeSelf={active === 'overview'} />
           {GROUPS.map((g) => (
-            <div key={g.label} style={{ position: 'relative' }} onMouseEnter={() => setOpenGroup(g.label)}>
-              <TopTab label={g.label} caret activeSelf={g.items.some((i) => i.key === active)} />
+            <div key={g.label} style={{ position: 'relative' }}>
+              <div onClick={() => setOpenGroup(openGroup === g.label ? null : g.label)}>
+                <TopTab label={g.label} caret activeSelf={g.items.some((i) => i.key === active)} />
+              </div>
               {openGroup === g.label && (
                 <div
                   style={{
@@ -76,7 +90,7 @@ export default function AdminTopNav({ active, admin, onLoggedOut, onChangePasswo
                     top: '100%',
                     left: 0,
                     marginTop: 4,
-                    background: '#fff',
+                    background: T.surface,
                     border: `1px solid ${T.border}`,
                     borderRadius: 12,
                     boxShadow: '0 12px 28px -8px rgba(20,20,50,0.18)',
@@ -140,8 +154,8 @@ function TopTab({ label, caret, activeSelf }) {
         gap: 4,
         fontSize: 13.5,
         fontWeight: activeSelf ? 700 : 600,
-        color: activeSelf ? '#5b5bf0' : '#5c5f70',
-        borderBottom: activeSelf ? '2px solid #5b5bf0' : '2px solid transparent',
+        color: activeSelf ? 'var(--admin-primary)' : 'var(--admin-ink-muted)',
+        borderBottom: activeSelf ? '2px solid var(--admin-primary)' : '2px solid transparent',
         cursor: 'pointer',
       }}
     >
@@ -157,7 +171,7 @@ const navButtonStyle = {
   padding: '7px 12px',
   borderRadius: 8,
   border: `1px solid ${T.border}`,
-  background: '#fff',
+  background: T.surface,
   color: T.inkMuted,
   cursor: 'pointer',
 }

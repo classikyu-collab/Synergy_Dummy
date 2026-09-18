@@ -1,13 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { PARENT_THEME as THEME } from '../lib/theme'
+import { loadKnownChildren } from '../lib/parentChildren'
 
 export default function ParentView() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [error, setError] = useState('')
   const debounceRef = useRef(null)
+  const knownChildren = loadKnownChildren()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const forceSearch = searchParams.get('new') === '1'
+
+  // 홈 화면 아이콘은 iOS에서 start_url을 정확히 못 잡아줄 때가 있어 이 검색 화면으로
+  // 떨어질 수 있다. 저장된 자녀가 한 명뿐이면 검색 없이 바로 그 화면으로 넘겨준다.
+  useEffect(() => {
+    if (!forceSearch && knownChildren.length === 1) {
+      navigate(`/parent/${knownChildren[0].id}`, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -26,6 +40,10 @@ export default function ParentView() {
     }, 300)
     return () => clearTimeout(debounceRef.current)
   }, [query])
+
+  if (!forceSearch && knownChildren.length === 1) {
+    return null
+  }
 
   return (
     <div
@@ -55,13 +73,40 @@ export default function ParentView() {
             width: '100%',
             padding: '14px 16px',
             fontSize: 16,
-            border: `1px solid #dcece9`,
+            border: `1px solid ${THEME.border}`,
             borderRadius: 14,
             boxSizing: 'border-box',
             marginBottom: 14,
             background: '#fff',
           }}
         />
+
+        {!query.trim() && knownChildren.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 700, color: THEME.inkMuted, margin: '0 0 8px 2px' }}>최근 확인한 자녀</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {knownChildren.map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/parent/${c.id}`}
+                  style={{
+                    background: '#fff',
+                    border: `1px solid ${THEME.border}`,
+                    borderRadius: 14,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    boxShadow: '0 4px 14px -10px rgba(43,38,33,0.16)',
+                  }}
+                >
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>{c.name}</span>
+                  <span style={{ fontSize: 12.5, color: THEME.primaryDark, fontWeight: 600 }}>바로 보기 →</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <p style={{ color: 'red', fontSize: 13 }}>{error}</p>}
 
@@ -77,13 +122,13 @@ export default function ParentView() {
                 to={`/parent/${s.id}`}
                 style={{
                   background: '#fff',
-                  border: '1px solid #dcece9',
+                  border: `1px solid ${THEME.border}`,
                   borderRadius: 14,
                   padding: '14px 16px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  boxShadow: '0 4px 14px -10px rgba(20,80,75,0.16)',
+                  boxShadow: '0 4px 14px -10px rgba(43,38,33,0.16)',
                 }}
               >
                 <span style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</span>

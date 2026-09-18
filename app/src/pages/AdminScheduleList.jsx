@@ -597,7 +597,7 @@ function ViewTab({ active, onClick, children }) {
         padding: '8px 14px',
         borderRadius: 999,
         border: `1px solid ${active ? T.primary : T.border}`,
-        background: active ? T.primaryTint : '#fff',
+        background: active ? T.primaryTint : T.surface,
         color: active ? T.primaryDark : T.inkMuted,
         cursor: 'pointer',
       }}
@@ -617,7 +617,7 @@ function FilterTab({ active, onClick, children }) {
         padding: '6px 12px',
         borderRadius: 8,
         border: `1px solid ${active ? T.ink : T.border}`,
-        background: active ? T.ink : '#fff',
+        background: active ? T.ink : T.surface,
         color: active ? '#fff' : T.inkMuted,
         cursor: 'pointer',
       }}
@@ -740,7 +740,7 @@ function ClassCard({ classInfo, filter, students, onEditSchedule, onAssignStuden
         marginBottom: 10,
         padding: '8px 10px',
         borderRadius: 10,
-        background: '#fff',
+        background: T.surface,
         border: `2px solid ${teacherColor}`,
         borderLeft: `6px solid ${teacherColor}`,
       }}

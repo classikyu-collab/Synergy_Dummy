@@ -67,7 +67,7 @@ export default function AdminStaffList() {
           renderTable={(half, i) => (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#fafaff' }}>
+                <tr style={{ background: T.bg }}>
                   <Th>아이디</Th>
                   <Th>이름</Th>
                   <Th w={110}>역할</Th>
